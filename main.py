@@ -1,5 +1,6 @@
 import sys
-import time
+
+# import time
 from dataclasses import dataclass
 
 
@@ -111,7 +112,7 @@ class RailwayNetwork:
 
 if __name__ == "__main__":
     # 標準入力から駅と路線の情報を読み込む
-    s = time.time()
+    # s = time.time()
     station_map = {}  # 駅IDをキー、Stationオブジェクトを値とする辞書
     for line in sys.stdin:
         if not line.strip():
@@ -138,5 +139,5 @@ if __name__ == "__main__":
     railway_network = RailwayNetwork(stations=list(station_map.values()))
     for station in railway_network.find_longest_path():
         print(station.id, end="\r\n")
-    t = time.time() - s
-    print(f"Execution time: {t:.6f} seconds", file=sys.stderr)
+    # t = time.time() - s
+    # print(f"Execution time: {t:.6f} seconds", file=sys.stderr)

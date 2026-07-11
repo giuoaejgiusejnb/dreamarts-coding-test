@@ -17,7 +17,7 @@
 
 ```bash
 # 例: input.txt に入力データが保存されている場合
-python main.py < input.txt
+Get-Content input.txt | python main.py
 ```
 
 ## 3. 計算量について

@@ -1,4 +1,5 @@
 import sys
+import time
 from dataclasses import dataclass
 
 
@@ -45,10 +46,10 @@ class RailwayNetwork:
 
         NEG_INF = float("-inf")
 
-        # dp[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾長点の状態における最長経路の長さ
+        # dp[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾頂点の状態における最長経路の長さ
         dp = [[NEG_INF] * self.N for _ in range(1 << self.N)]
         # 経路復元用の配列
-        # prev_idxs[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾長点の状態における最長経路の一つ前の駅のインデックス
+        # prev_idxs[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾頂点の状態における最長経路の一つ前の駅のインデックス
         prev_idxs = [[-1] * self.N for _ in range(1 << self.N)]
 
         # 初期状態: 任意の1駅から始めて，その駅のみで終わる場合の最長経路の長さは0
@@ -58,8 +59,8 @@ class RailwayNetwork:
         for visited_set in range(1 << self.N):
             for current_idx in range(self.N):
                 # 一つ目の場合分けはなくて二つ目だけでもいいが，リストの要素にアクセスするよりも，ビット演算の方が高速なので，一つ目も書く
-                if not (visited_set & (1 << current_idx)):
-                    continue  # current_idxが訪問済みでない場合はスキップ
+                # if not (visited_set & (1 << current_idx)):
+                #   continue  # current_idxが訪問済みでない場合はスキップ
                 if dp[visited_set][current_idx] == NEG_INF:
                     continue  # この状態がまだ計算されていない＝この状態になることはないのでスキップ
 
@@ -113,6 +114,7 @@ class RailwayNetwork:
 
 if __name__ == "__main__":
     # 標準入力から駅と路線の情報を読み込む
+    s = time.time()
     station_map = {}  # 駅IDをキー、Stationオブジェクトを値とする辞書
     for line in sys.stdin:
         if not line.strip():
@@ -139,3 +141,5 @@ if __name__ == "__main__":
     railway_network = RailwayNetwork(stations=list(station_map.values()))
     for station in railway_network.find_longest_path():
         print(station.id, end="\r\n")
+    t = time.time() - s
+    print(f"Execution time: {t:.6f} seconds", file=sys.stderr)

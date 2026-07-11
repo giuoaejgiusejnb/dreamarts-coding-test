@@ -13,12 +13,18 @@
 
 ## 2. 実行手順
 
-コマンドライン（ターミナル）から、標準入力にテストデータを流し込んで実行してください。
+お使いの環境（ターミナル・シェル）に合わせて、標準入力にテストデータを流し込んで実行してください。
 
+### Mac / Linux（ターミナル）または Windows（コマンドプロンプト）の場合
 ```bash
-# 例: input.txt に入力データが保存されている場合
+python main.py < input.txt
+```
+
+### Windows（PowerShell）の場合
+```powershell
 Get-Content input.txt | python main.py
 ```
+
 
 ## 3. 計算量について
 

@@ -58,9 +58,6 @@ class RailwayNetwork:
 
         for visited_set in range(1 << self.N):
             for current_idx in range(self.N):
-                # 一つ目の場合分けはなくて二つ目だけでもいいが，リストの要素にアクセスするよりも，ビット演算の方が高速なので，一つ目も書く
-                # if not (visited_set & (1 << current_idx)):
-                #   continue  # current_idxが訪問済みでない場合はスキップ
                 if dp[visited_set][current_idx] == NEG_INF:
                     continue  # この状態がまだ計算されていない＝この状態になることはないのでスキップ
 

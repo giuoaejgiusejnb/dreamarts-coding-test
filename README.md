@@ -70,7 +70,10 @@ $$dp[S \cup \lbrace next \rbrace ][next] = \max_{v \in S} \left( dp[S][v] + dist
 
 この計算が成立するためには、遷移元となる状態 $dp[S][v]$ が常に先に計算されている必要があります。本プログラムでは `for visited_set in range(1 << self.N):` と集合を表す整数値を昇順にループさせているため、以下の順序関係が常に維持されます。
 
-1. **部分問題の先行解決:** $next \notin S$ のとき、ビット演算の性質上、常に $S < (S \cup \lbrace next \rbrace )$ が成り立ちます。したがって、遷移元である $S$ の状態は、必ず $S \cup \lbrace next \rbrace $ の計算前に評価済みとなります。
+1. **部分問題の先行解決:** 
+$next \notin S$ のとき、ビット演算の性質上、常に $S < (S \cup \lbrace next \rbrace )$ が成り立ちます。したがって、遷移元である $S$ の状態は、必ず 
+$S \cup \lbrace next \rbrace $ 
+の計算前に評価済みとなります。
 2. **最適部分構造:** 各状態 $(S, v)$ における値が、その手前の経路の最適解から導かれているため、動的計画法の性質により全体としても厳密な最長経路が保証されます。
 
 

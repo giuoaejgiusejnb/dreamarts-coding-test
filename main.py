@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 
 # import time
 from dataclasses import dataclass
@@ -36,78 +37,58 @@ class RailwayNetwork:
             station.id: i for i, station in enumerate(self.stations)
         }
 
-    def find_longest_path(self) -> list[Station]:
+    def find_longest_path(self) -> list[int]:
         """最長経路を見つけるメソッド"""
 
-        dp, prev_idxs = self._compute_bit_dp()
-        return self._reconstruct_path(dp, prev_idxs)
-
-    def _compute_bit_dp(self) -> tuple[list[list[float]], list[list[int]]]:
-        """ビットDPを用いて最長経路を計算するメソッド"""
-
-        NEG_INF = float("-inf")
-
-        # dp[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾頂点の状態における最長経路の長さ
-        dp = [[NEG_INF] * self.N for _ in range(1 << self.N)]
-        # 経路復元用の配列
-        # prev_idxs[ビット集合][現在の末尾頂点] = そのビット集合の経路で，その末尾頂点の状態における最長経路の一つ前の駅のインデックス
-        prev_idxs = [[-1] * self.N for _ in range(1 << self.N)]
-
-        # 初期状態: 任意の1駅から始めて，その駅のみで終わる場合の最長経路の長さは0
-        for i in range(self.N):
-            dp[1 << i][i] = 0.0
-
-        for visited_set in range(1 << self.N):
-            for current_idx in range(self.N):
-                if dp[visited_set][current_idx] == NEG_INF:
-                    continue  # この状態がまだ計算されていない＝この状態になることはないのでスキップ
-
-                for railway in self.stations[current_idx].railways:
-                    next_idx = self.id_to_index.get(railway.id)
-                    if next_idx is None:
-                        continue
-                    if visited_set & (1 << next_idx):
-                        continue  # next_idxが訪問済みの場合はスキップ
-
-                    next_visited_set = visited_set | (1 << next_idx)
-                    new_length = dp[visited_set][current_idx] + railway.distance
-                    if dp[next_visited_set][next_idx] < new_length:
-                        # dpを更新
-                        dp[next_visited_set][next_idx] = new_length
-                        # 経路復元用に前の駅のインデックスを記録
-                        prev_idxs[next_visited_set][next_idx] = current_idx
-
-        return (dp, prev_idxs)
-
-    def _reconstruct_path(
-        self, dp: list[list[float]], prev_idxs: list[list[int]]
-    ) -> list[Station]:
-        """最長経路を復元するメソッド"""
-
-        # まず，dpの中で最長経路の長さを持つ状態を探す
         max_length = float("-inf")
-        best_states = []  # 最長経路の長さを持つ状態のリスト [[ビット集合, 現在の末尾頂点] の形で格納]
-        for visited_set in range(1 << self.N):
-            for current_idx in range(self.N):
-                if dp[visited_set][current_idx] > max_length:
-                    max_length = dp[visited_set][current_idx]
-                    best_states = [[visited_set, current_idx]]
-                elif dp[visited_set][current_idx] == max_length:
-                    best_states.append([visited_set, current_idx])
+        best_path_ids: list[int] = []
+        # 始点を固定して最長距離を求める
+        # 始点と終点のみ一致していいという条件なので，始点を特別扱い
+        for station in self.stations:
+            start_id = station.id
+            # dfsで最長経路を探索
+            current_max_length, current_path_ids = self._dfs(start_id)
+            # 現在の最長経路がこれまでの最長経路よりも長ければ更新
+            if current_max_length > max_length:
+                max_length = current_max_length
+                best_path_ids = current_path_ids
 
-        # 最長経路を求める
-        best_state = best_states[0]  # 今回は一つだけ出力
-        current_visited_set = best_state[0]
-        current_idx = best_state[1]
-        best_paths = []  # 最長経路の末尾駅のIDを格納
-        while current_visited_set:
-            best_paths.append(current_idx)
-            prev_idx = prev_idxs[current_visited_set][current_idx]
-            current_visited_set ^= 1 << current_idx
-            current_idx = prev_idx
+        return best_path_ids
 
-        # 後ろから追加しているので逆順に
-        return [self.stations[i] for i in reversed(best_paths)]
+    def _dfs(self, start_id: int) -> tuple[float, list[int]]:
+        """深さ優先探索で最長経路を見つけるメソッド"""
+
+        # [現在の経路（駅IDのリスト）, 現在の距離]
+        stack = deque([([start_id], 0.0)])
+        # 現在の最長距離
+        max_dist = float("-inf")
+        # 現在の最長経路
+        best_path_ids: list[int] = []
+
+        while stack:
+            path_ids, dist = stack.pop()
+            # 現在の駅を取得
+            curr_station = self.stations[self.id_to_index[path_ids[-1]]]
+            # 現在の距離がこれまでの最長距離よりも長ければ更新
+            if dist > max_dist:
+                max_dist = dist
+                best_path_ids = path_ids
+
+            for r in curr_station.railways:
+                # 始点に戻る場合の処理（サイクルを形成する場合）
+                if r.id == start_id and len(path_ids) > 2:
+                    total_dist = dist + r.distance
+                    if total_dist > max_dist:
+                        max_dist = total_dist
+                        best_path_ids = path_ids + [start_id]
+                        continue  # サイクルを形成する場合は、次のノードへ進む前にスキップ
+
+                # 次のノードへ（訪問済み駅はスキップ）
+                if r.id in path_ids:
+                    continue
+                stack.append((path_ids + [r.id], dist + r.distance))
+
+        return max_dist, best_path_ids
 
 
 if __name__ == "__main__":
@@ -137,7 +118,7 @@ if __name__ == "__main__":
 
     # 最長経路を指定の形で出力
     railway_network = RailwayNetwork(stations=list(station_map.values()))
-    for station in railway_network.find_longest_path():
-        print(station.id, end="\r\n")
+    for station_id in railway_network.find_longest_path():
+        print(station_id, end="\r\n")
     # t = time.time() - s
     # print(f"Execution time: {t:.6f} seconds", file=sys.stderr)
